@@ -132,6 +132,25 @@
             letter-spacing: 0.5px;
         }
 
+        .mobile-sidebar-btn {
+            display: none;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
         .theme-toggle {
             background: none;
             border: 1px solid var(--border);
@@ -176,6 +195,23 @@
         .pane-header h2 {
             margin: 0;
             font-size: 1.2rem;
+        }
+
+        /* Mobile Toolbar Toggle */
+        .mobile-toolbar-btn {
+            display: none;
+            width: 100%;
+            background-color: var(--header-bg);
+            color: var(--text-main);
+            border: none;
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .mobile-toolbar-btn:hover {
+            background-color: var(--border);
         }
 
         /* Toolbar & Editor */
@@ -283,6 +319,10 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+        }
+
+        .sidebar-close-btn {
+            display: none;
         }
 
         .sidebar-section {
@@ -403,6 +443,81 @@
             background-color: var(--app-bg);
         }
 
+        /* Search Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--app-bg);
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow);
+            color: var(--text-main);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .close-modal {
+            color: var(--text-muted);
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .search-results {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--border);
+        }
+
+        .search-date {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .search-snippet {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 800px) {
             body {
@@ -413,17 +528,40 @@
                 flex-direction: column;
             }
 
+            .app-title {
+                display: none;
+                /* Hide title to make space for buttons */
+            }
+
+            .mobile-sidebar-btn {
+                display: flex;
+            }
+
             .sidebar-pane {
-                max-width: 100%;
-                flex: none;
-                height: 45vh;
-                border-left: none;
-                border-top: 1px solid var(--border);
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 85%;
+                max-width: 350px;
+                height: 100dvh;
+                z-index: 2000;
+                transition: right 0.3s ease;
+                border-left: 1px solid var(--border);
+                border-top: none;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+            }
+
+            .sidebar-pane.open {
+                right: 0;
+            }
+
+            .sidebar-close-btn {
+                display: block;
             }
 
             .main-pane {
-                flex: none;
-                height: 55vh;
+                flex: 1;
+                height: auto;
             }
 
             .app-window {
@@ -441,16 +579,57 @@
             .pane-header>div {
                 display: flex;
                 width: 100%;
-                gap: 10px;
+                gap: 8px;
+                flex-wrap: wrap;
             }
 
             .pane-header>div>input {
-                flex: 1;
+                flex: 1 1 45%;
+                min-width: 0;
             }
 
             .pane-header>div>button {
                 margin-left: 0;
-                flex: 1;
+                flex: 1 1 30%;
+                padding: 8px;
+                font-size: 0.85rem;
+            }
+
+            /* Mobile Toolkit Hide/Show */
+            .mobile-toolbar-btn {
+                display: block;
+            }
+
+            .toolbar {
+                display: none;
+                /* Hidden by default on mobile */
+            }
+
+            .toolbar.show {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding: 10px 15px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                /* Firefox */
+            }
+
+            .toolbar.show::-webkit-scrollbar {
+                display: none;
+                /* Chrome/Safari */
+            }
+
+            .toolbar button,
+            .toolbar select,
+            .toolbar-divider {
+                flex-shrink: 0;
+            }
+
+            /* Larger touch targets for Text Areas & Editor */
+            textarea,
+            #editor {
+                padding: 15px;
             }
         }
 
@@ -500,6 +679,8 @@
 
 <body>
 
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
     <div class="app-window">
 
         <div class="app-header">
@@ -509,7 +690,11 @@
                 <div class="dot green" onclick="toggleMaximize()" title="Maximize / Restore"></div>
             </div>
             <div class="app-title">Workspace - Daily Notes</div>
-            <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="theme-toggle mobile-sidebar-btn" onclick="toggleMobileSidebar()"><i
+                        class="fas fa-book"></i> Doubts</button>
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+            </div>
         </div>
 
         <div class="app-body">
@@ -524,8 +709,14 @@
                         <button class="btn btn-inline" onclick="saveData()" title="Shortcut: Ctrl+S">Save Work</button>
                         <button class="btn btn-inline" style="background-color: #10b981;" onclick="downloadYearlyCSV()"
                             title="Export Yearly CSV"><i class="fas fa-file-csv"></i> Export</button>
+                        <button class="btn btn-inline" style="background-color: #8b5cf6;" onclick="openSearchModal()"
+                            title="Search Past Notes"><i class="fas fa-search"></i> Search</button>
                     </div>
                 </div>
+
+                <button class="mobile-toolbar-btn" onclick="toggleMobileToolbar()">
+                    <i class="fas fa-tools"></i> Show Toolkit
+                </button>
 
                 <div class="toolbar">
                     <button onclick="formatText('undo')" title="Undo"><i class="fas fa-undo"></i></button>
@@ -612,6 +803,11 @@
 
             <div class="sidebar-pane">
 
+                <div class="sidebar-close-btn" onclick="toggleMobileSidebar()"
+                    style="text-align: right; padding: 15px 20px 0; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--text-muted);">
+                    <i class="fas fa-times"></i> Close
+                </div>
+
                 <div class="sidebar-section">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -657,6 +853,22 @@
         </div>
     </div>
 
+    <!-- Search Modal -->
+    <div id="searchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔍 Search Past Notes</h3>
+                <span class="close-modal" onclick="closeSearchModal()">&times;</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="searchInput" placeholder="Enter keyword to search..." style="flex: 1;"
+                    onkeyup="if(event.key === 'Enter') searchNotes()">
+                <button class="btn btn-inline" style="margin: 0;" onclick="searchNotes()">Search</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+
     <script>
         const editor = document.getElementById('editor');
         const datePicker = document.getElementById('datePicker');
@@ -691,6 +903,14 @@
         });
         editor.addEventListener('input', handleTyping);
         document.querySelectorAll('textarea').forEach(el => el.addEventListener('input', markUnsaved));
+
+        // Auto-close toolkit on mobile after tool selection
+        document.querySelector('.toolbar').addEventListener('click', (e) => {
+            if (e.target.closest('button')) closeMobileToolbar();
+        });
+        document.querySelector('.toolbar').addEventListener('change', (e) => {
+            if (e.target.tagName.toLowerCase() === 'select') closeMobileToolbar();
+        });
 
         // Keyboard Shortcut for Save (Ctrl + S)
         document.addEventListener('keydown', function (e) {
@@ -744,12 +964,42 @@
             appWindow.classList.toggle('maximized');
         }
 
+        // Mobile Sidebar Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.querySelector('.sidebar-pane');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        // Mobile Toolbar Toggle
+        function toggleMobileToolbar() {
+            const toolbar = document.querySelector('.toolbar');
+            const btn = document.querySelector('.mobile-toolbar-btn');
+            toolbar.classList.toggle('show');
+
+            if (toolbar.classList.contains('show')) {
+                btn.innerHTML = '<i class="fas fa-times"></i> Hide Toolkit';
+            } else {
+                btn.innerHTML = '<i class="fas fa-tools"></i> Show Toolkit';
+            }
+        }
+
+        function closeMobileToolbar() {
+            if (window.innerWidth <= 800) {
+                const toolbar = document.querySelector('.toolbar');
+                if (toolbar.classList.contains('show')) toggleMobileToolbar();
+            }
+        }
+
         // Typing tracking
-        function handleTyping() {
-            markUnsaved();
+        function handleTyping(isLoad = false) {
             let text = editor.innerText || "";
             let words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
             wordCountDisplay.innerText = words;
+            if (isLoad !== true) {
+                markUnsaved();
+            }
         }
 
         function markUnsaved() {
@@ -801,6 +1051,16 @@
             }
         }
 
+        function getCleanEditorHTML() {
+            const clone = editor.cloneNode(true);
+            const highlights = clone.querySelectorAll('.search-highlight');
+            highlights.forEach(h => {
+                const text = document.createTextNode(h.textContent);
+                h.parentNode.replaceChild(text, h);
+            });
+            return clone.innerHTML;
+        }
+
         // Save & Load Data
         function saveData() {
             const date = datePicker.value;
@@ -808,7 +1068,7 @@
             if (!date) return alert("Please select a date.");
 
             const dailyData = {
-                note: editor.innerHTML,
+                note: getCleanEditorHTML(),
                 fsd: document.getElementById('doubt-fsd').value,
                 python: document.getElementById('doubt-python').value,
                 toa: document.getElementById('doubt-toa').value,
@@ -842,8 +1102,9 @@
                 editor.innerHTML = "";
                 doubtFields.forEach(subject => document.getElementById(`doubt-${subject}`).value = "");
             }
-            handleTyping();
+            handleTyping(true); // Passes true to prevent firing auto-save bug on load
             markSaved();
+            clearTimeout(autoSaveTimer);
         }
 
         // Export Data
