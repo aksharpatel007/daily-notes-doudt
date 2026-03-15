@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Notes Workspace</title>
+    <!-- FontAwesome for Professional Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Dark Mode (Default) */
+            --page-bg: #0f172a;
+            --app-bg: #1e293b;
+            --sidebar-bg: #0f172a;
+            --header-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border: #334155;
+            --input-bg: #0f172a;
+            --danger: #ef4444;
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --highlight-bg: #ca8a04;
+            --highlight-text: #ffffff;
+        }
+
+        .light-mode {
+            /* Light Mode */
+            --page-bg: #cbd5e1;
+            --app-bg: #ffffff;
+            --sidebar-bg: #f1f5f9;
+            --header-bg: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --input-bg: #ffffff;
+            --danger: #dc2626;
+            --shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+            --highlight-bg: #fef08a;
+            --highlight-text: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* The Main "Laptop Box" Container */
+        .app-window {
+            width: 100%;
+            max-width: 1300px;
+            height: 90vh;
+            /* Takes up 90% of screen height */
+            background-color: var(--app-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        /* App Window Header (macOS style dots) */
+        .app-header {
+            height: 50px;
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            user-select: none;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red {
+            background-color: #ff5f56;
+        }
+
+        .dot.yellow {
+            background-color: #ffbd2e;
+        }
+
+        .dot.green {
+            background-color: #27c93f;
+            cursor: pointer;
+        }
+
+        /* Maximized Window State */
+        .app-window.maximized {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            border-radius: 0;
+            border: none;
+            z-index: 1000;
+        }
+
+        .app-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 4px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--border);
+        }
+
+        /* Two-Pane Layout inside the Box */
+        .app-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Left Pane: Main Editor */
+        .main-pane {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background-color: var(--app-bg);
+        }
+
+        .pane-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pane-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        /* Toolbar & Editor */
+        .toolbar {
+            padding: 12px 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--header-bg);
+            align-items: center;
+        }
+
+        .toolbar button {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .toolbar select {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .toolbar button:hover {
+            background: var(--border);
+            color: var(--accent);
+        }
+
+        .toolbar select:hover {
+            border-color: var(--accent);
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background-color: var(--border);
+            margin: 0 4px;
+        }
+
+        #editor {
+            flex: 1;
+            padding: 20px;
+            outline: none;
+            overflow-y: auto;
+            line-height: 1.7;
+            font-size: 1.05rem;
+        }
+
+        #editor:empty:before {
+            content: "Write your daily notes here...";
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Dynamic Highlight Styling */
+        #editor [style*="background-color: yellow" i],
+        #editor [style*="background-color: rgb(255, 255, 0)" i],
+        #editor [style*="background-color: #ffff00" i],
+        #editor [style*="background: yellow" i] {
+            background-color: var(--highlight-bg) !important;
+            color: var(--highlight-text) !important;
+        }
+
+        /* Custom Scrollbar for Editor & Sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Right Pane: Sidebar (Doubts & Export) */
+        .sidebar-pane {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background-color: var(--sidebar-bg);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Inputs & Buttons */
+        input[type="text"]#userPicker,
+        input[type="date"],
+        input[type="number"] {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.6;
+        }
+
+        .light-mode input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0);
+        }
+
+        .doubt-group {
+            margin-bottom: 15px;
+        }
+
+        .doubt-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--accent);
+        }
+
+        textarea {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 70px;
+            font-family: inherit;
+            outline: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        /* Textarea specific custom scrollbar */
+        textarea::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            display: block;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-inline {
+            width: auto;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .status-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+            background-color: var(--app-bg);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 800px) {
+            body {
+                padding: 0;
+            }
+
+            .app-body {
+                flex-direction: column;
+            }
+
+            .sidebar-pane {
+                max-width: 100%;
+                flex: none;
+                height: 45vh;
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+
+            .main-pane {
+                flex: none;
+                height: 55vh;
+            }
+
+            .app-window {
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+            }
+
+            .pane-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .pane-header>div {
+                display: flex;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .pane-header>div>input {
+                flex: 1;
+            }
+
+            .pane-header>div>button {
+                margin-left: 0;
+                flex: 1;
+            }
+        }
+
+        /* Print Styling */
+        @media print {
+            body {
+                padding: 0;
+                background-color: #fff !important;
+                display: block;
+            }
+
+            .app-window {
+                box-shadow: none;
+                border: none;
+                height: auto;
+                display: block;
+            }
+
+            .app-body {
+                display: block;
+                overflow: visible !important;
+            }
+
+            .app-header,
+            .toolbar,
+            .pane-header,
+            .sidebar-pane,
+            .status-text {
+                display: none !important;
+            }
+
+            .main-pane {
+                border: none;
+                background-color: #fff !important;
+                display: block;
+            }
+
+            #editor {
+                padding: 0;
+                color: #000 !important;
+                overflow: visible !important;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-window">
+
+        <div class="app-header">
+            <div class="window-controls">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green" onclick="toggleMaximize()" title="Maximize / Restore"></div>
+            </div>
+            <div class="app-title">Workspace - Daily Notes</div>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+        </div>
+
+        <div class="app-body">
+
+            <div class="main-pane">
+                <div class="pane-header">
+                    <h2>📝 Editor</h2>
+                    <div>
+                        <input type="text" id="userPicker" placeholder="Username" title="Active User"
+                            style="width: 110px;">
+                        <input type="date" id="datePicker">
+                        <button class="btn btn-inline" onclick="saveData()" title="Shortcut: Ctrl+S">Save Work</button>
+                        <button class="btn btn-inline" style="background-color: #10b981;" onclick="downloadYearlyCSV()"
+                            title="Export Yearly CSV"><i class="fas fa-file-csv"></i> Export</button>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <button onclick="formatText('undo')" title="Undo"><i class="fas fa-undo"></i></button>
+                    <button onclick="formatText('redo')" title="Redo"><i class="fas fa-redo"></i></button>
+                    <div class="toolbar-divider"></div>
+
+                    <button onclick="formatText('bold')" title="Bold"><i class="fas fa-bold"></i></button>
+                    <button onclick="formatText('italic')" title="Italic"><i class="fas fa-italic"></i></button>
+                    <button onclick="formatText('underline')" title="Underline"><i
+                            class="fas fa-underline"></i></button>
+                    <button onclick="formatText('strikeThrough')" title="Strikethrough"><i
+                            class="fas fa-strikethrough"></i></button>
+                    <button onclick="formatText('hiliteColor', 'yellow')" title="Highlight"><i
+                            class="fas fa-highlighter"></i></button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button onclick="formatText('justifyLeft')" title="Align Left"><i
+                            class="fas fa-align-left"></i></button>
+                    <button onclick="formatText('justifyCenter')" title="Align Center"><i
+                            class="fas fa-align-center"></i></button>
+                    <button onclick="formatText('justifyRight')" title="Align Right"><i
+                            class="fas fa-align-right"></i></button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <select onchange="formatText('fontName', this.value)" title="Change Font Style">
+                        <option value="">Default Font</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Courier New, monospace">Courier (Code)</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Times New Roman, serif">Times New Roman</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                    </select>
+
+                    <select onchange="formatText('fontSize', this.value)" title="Font Size">
+                        <option value="">Size</option>
+                        <option value="1">Small</option>
+                        <option value="3">Normal</option>
+                        <option value="5">Large</option>
+                        <option value="7">Huge</option>
+                    </select>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button onclick="formatText('formatBlock', 'H3')" title="Heading"><i
+                            class="fas fa-heading"></i></button>
+                    <button onclick="formatText('insertUnorderedList')" title="Bullet List"><i
+                            class="fas fa-list-ul"></i></button>
+                    <button onclick="formatText('insertOrderedList')" title="Numbered List"><i
+                            class="fas fa-list-ol"></i></button>
+                    <button onclick="insertLink()" title="Insert Link"><i class="fas fa-link"></i></button>
+
+                    <div class="toolbar-divider"></div>
+
+                    <button onclick="window.print()" title="Print Editor Content"
+                        style="color: var(--accent); width: auto; padding: 0 12px; gap: 6px;">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+
+                    <button onclick="copyToClipboard()" id="copyBtn" title="Copy text to clipboard"
+                        style="color: var(--accent); width: auto; padding: 0 12px; gap: 6px;">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+
+                    <button onclick="formatText('removeFormat')" title="Clear Formatting / Remove Styles"
+                        style="color: var(--danger); width: auto; padding: 0 12px; gap: 6px;">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+
+                    <button onclick="clearNote()" title="Wipe Editor Content"
+                        style="color: var(--danger); width: auto; padding: 0 12px; gap: 6px;">
+                        <i class="fas fa-trash-alt"></i> Wipe
+                    </button>
+                </div>
+
+                <div id="editor" contenteditable="true"></div>
+
+                <div class="status-text">
+                    <span id="saveStatus">Status: Saved ✓</span>
+                    <span><span id="wordCount">0</span> words</span>
+                </div>
+            </div>
+
+            <div class="sidebar-pane">
+
+                <div class="sidebar-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">🤔 Subject Doubts</h3>
+                        <button class="btn btn-inline"
+                            style="background-color: var(--danger); font-size: 0.75rem; padding: 4px 8px; margin: 0;"
+                            onclick="clearDoubts()" title="Clear All Doubts">
+                            <i class="fas fa-trash-alt"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="doubt-group">
+                        <label>FSD (Full Stack)</label>
+                        <textarea id="doubt-fsd" placeholder="Note down FSD doubts..."></textarea>
+                    </div>
+                    <div class="doubt-group">
+                        <label>PYTHON</label>
+                        <textarea id="doubt-python" placeholder="Note down Python doubts..."></textarea>
+                    </div>
+                    <div class="doubt-group">
+                        <label>TOA (Automata)</label>
+                        <textarea id="doubt-toa" placeholder="Note down Automata doubts..."></textarea>
+                    </div>
+                    <div class="doubt-group">
+                        <label>COA (Architecture)</label>
+                        <textarea id="doubt-coa" placeholder="Note down Architecture doubts..."></textarea>
+                    </div>
+                    <div class="doubt-group">
+                        <label>DM (Discrete Math)</label>
+                        <textarea id="doubt-dm" placeholder="Note down Math doubts..."></textarea>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>📊 Export Data</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="number" id="yearPicker" min="2000" max="2100" step="1" value="2026"
+                            style="flex: 1;">
+                    </div>
+                    <button class="btn" onclick="downloadYearlyCSV()">Download Yearly CSV</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const datePicker = document.getElementById('datePicker');
+        const userPicker = document.getElementById('userPicker');
+        const yearPicker = document.getElementById('yearPicker');
+        const wordCountDisplay = document.getElementById('wordCount');
+        const saveStatus = document.getElementById('saveStatus');
+        const doubtFields = ['fsd', 'python', 'toa', 'coa', 'dm'];
+        let autoSaveTimer;
+
+        // Initial Date Setup
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        datePicker.value = today;
+        yearPicker.value = new Date().getFullYear();
+
+        // Initial User Setup
+        userPicker.value = localStorage.getItem('laptopUser') || 'DefaultUser';
+
+        // Load Theme Preference
+        if (localStorage.getItem('laptopTheme') === 'light') {
+            document.body.classList.add('light-mode');
+            document.getElementById('themeBtn').innerText = '🌙 Dark';
+        }
+
+        // Listeners
+        datePicker.addEventListener('change', loadData);
+        userPicker.addEventListener('change', () => {
+            userPicker.value = userPicker.value.trim() || 'DefaultUser';
+            localStorage.setItem('laptopUser', userPicker.value);
+            loadData();
+        });
+        editor.addEventListener('input', handleTyping);
+        document.querySelectorAll('textarea').forEach(el => el.addEventListener('input', markUnsaved));
+
+        // Keyboard Shortcut for Save (Ctrl + S)
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault(); // Prevent browser's default HTML save dialog
+                saveData();
+            }
+        });
+
+        // Load initially
+        loadData();
+
+        // Editor Formatting
+        function formatText(command, value = null) {
+            if (command === 'hiliteColor') {
+                // Fallback support: Chrome prefers 'backColor', Firefox uses 'hiliteColor'
+                document.execCommand('hiliteColor', false, value);
+                document.execCommand('backColor', false, value);
+            } else {
+                document.execCommand(command, false, value);
+            }
+            editor.focus();
+            handleTyping();
+        }
+
+        // Insert Link Function
+        function insertLink() {
+            const url = prompt("Enter link URL:", "https://");
+            if (url) {
+                formatText('createLink', url);
+            }
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const btn = document.getElementById('themeBtn');
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('laptopTheme', 'dark');
+                btn.innerText = '☀️ Light';
+            } else {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('laptopTheme', 'light');
+                btn.innerText = '🌙 Dark';
+            }
+        }
+
+        // Maximize Window
+        function toggleMaximize() {
+            const appWindow = document.querySelector('.app-window');
+            appWindow.classList.toggle('maximized');
+        }
+
+        // Typing tracking
+        function handleTyping() {
+            markUnsaved();
+            let text = editor.innerText || "";
+            let words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            wordCountDisplay.innerText = words;
+        }
+
+        function markUnsaved() {
+            saveStatus.innerText = "Status: Unsaved changes...";
+            saveStatus.style.color = "var(--danger)";
+
+            // Auto-save logic: triggers 1.5 seconds after the user stops typing
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                saveData();
+            }, 1500);
+        }
+
+        function markSaved() {
+            saveStatus.innerText = "Status: Saved ✓";
+            saveStatus.style.color = "var(--text-muted)";
+        }
+
+        // Copy to Clipboard
+        function copyToClipboard() {
+            const textToCopy = editor.innerText;
+            if (!textToCopy.trim()) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied';
+                setTimeout(() => copyBtn.innerHTML = originalHTML, 2000);
+            }).catch(err => {
+                console.error("Failed to copy text: ", err);
+            });
+        }
+
+        // Clear Editor Note
+        function clearNote() {
+            if (confirm("Are you sure you want to clear the editor content?")) {
+                editor.innerHTML = "";
+                handleTyping(); // Trigger auto-save to persist changes
+            }
+        }
+
+        // Clear Doubts
+        function clearDoubts() {
+            if (confirm("Are you sure you want to clear all your subject doubts?")) {
+                doubtFields.forEach(subject => {
+                    document.getElementById(`doubt-${subject}`).value = "";
+                });
+                markUnsaved(); // Trigger auto-save to persist changes
+            }
+        }
+
+        // Save & Load Data
+        function saveData() {
+            const date = datePicker.value;
+            const currentUser = userPicker.value.trim() || 'DefaultUser';
+            if (!date) return alert("Please select a date.");
+
+            const dailyData = {
+                note: editor.innerHTML,
+                fsd: document.getElementById('doubt-fsd').value,
+                python: document.getElementById('doubt-python').value,
+                toa: document.getElementById('doubt-toa').value,
+                coa: document.getElementById('doubt-coa').value,
+                dm: document.getElementById('doubt-dm').value
+            };
+
+            localStorage.setItem(`${currentUser}_dailyData_${date}`, JSON.stringify(dailyData));
+            markSaved();
+
+            // Temporary button visual feedback
+            const saveBtn = document.querySelector('.btn-inline');
+            saveBtn.innerText = "Saved!";
+            setTimeout(() => saveBtn.innerText = "Save Work", 2000);
+        }
+
+        function loadData() {
+            const date = datePicker.value;
+            const currentUser = userPicker.value.trim() || 'DefaultUser';
+            const savedString = localStorage.getItem(`${currentUser}_dailyData_${date}`);
+
+            if (savedString) {
+                try {
+                    const dailyData = JSON.parse(savedString);
+                    editor.innerHTML = dailyData.note || "";
+                    doubtFields.forEach(subject => {
+                        document.getElementById(`doubt-${subject}`).value = dailyData[subject] || "";
+                    });
+                } catch (e) { console.error(e); }
+            } else {
+                editor.innerHTML = "";
+                doubtFields.forEach(subject => document.getElementById(`doubt-${subject}`).value = "");
+            }
+            handleTyping();
+            markSaved();
+        }
+
+        // Export Data
+        function formatForCSV(text) {
+            if (!text) return '""';
+            let plainText = text.replace(/<[^>]+>/g, ' ');
+            plainText = plainText.replace(/"/g, '""');
+            plainText = plainText.replace(/(\r\n|\n|\r)/gm, " ");
+            return `"${plainText}"`;
+        }
+
+        function downloadYearlyCSV() {
+            const year = yearPicker.value;
+            const currentUser = userPicker.value.trim() || 'DefaultUser';
+            let csvContent = "Date,Daily Note,FSD Doubts,PYTHON Doubts,TOA Doubts,COA Doubts,DM Doubts\n";
+            let hasData = false;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(`${currentUser}_dailyData_${year}`)) {
+                    hasData = true;
+                    const dateStr = key.replace(`${currentUser}_dailyData_`, '');
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        csvContent += `${dateStr},${formatForCSV(data.note)},${formatForCSV(data.fsd)},${formatForCSV(data.python)},${formatForCSV(data.toa)},${formatForCSV(data.coa)},${formatForCSV(data.dm)}\n`;
+                    } catch (e) { }
+                }
+            }
+
+            if (!hasData) return alert(`No data found for the year ${year}.`);
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Workspace_Notes_${year}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+
+</html>
